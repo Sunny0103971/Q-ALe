@@ -7,9 +7,12 @@ import OnboardingWizard from './components/OnboardingWizard';
 import DashboardView from './components/DashboardView';
 import SelfAssessmentView from './components/SelfAssessmentView';
 import PeerReviewHubView from './components/PeerReviewHubView';
+import ExcellencePathwayView from './components/ExcellencePathwayView';
+import FeedbackModuleView from './components/FeedbackModuleView';
+import CompetenceCenterView from './components/CompetenceCenterView';
 import type { DocumentAnalysis, WizardAnswers, AssessmentResult } from './types';
 
-type View = 'home' | 'document' | 'dashboard' | 'assessment' | 'peerReview';
+type View = 'home' | 'document' | 'dashboard' | 'assessment' | 'peerReview' | 'excellencePathway' | 'feedbackModule' | 'competenceCenter';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('home');
@@ -122,8 +125,8 @@ const App: React.FC = () => {
     setCurrentView('dashboard');
   };
 
-  const handleNavigateToPeerReview = () => {
-    setCurrentView('peerReview');
+  const handleNavigate = (view: View) => {
+    setCurrentView(view);
   };
   
   const handleAssessmentComplete = (topic: string, result: AssessmentResult) => {
@@ -131,31 +134,32 @@ const App: React.FC = () => {
   };
 
   const renderContent = () => {
+    const dashboardProps = {
+        answers: wizardAnswers!,
+        results: assessmentResults,
+        onStartAssessment: handleStartAssessment,
+        onNavigate: handleNavigate
+    };
+
     switch(currentView) {
       case 'home':
-        return (
-          <HomeView 
-            onSelectDocument={handleSelectDocument} 
-            documents={documents}
-            onStartWizard={() => setShowWizard(true)}
-          />
-        );
+        return <HomeView onSelectDocument={handleSelectDocument} documents={documents} onStartWizard={() => setShowWizard(true)} />;
       case 'document':
         return selectedDocument ? <DocumentView document={selectedDocument} /> : <HomeView onSelectDocument={handleSelectDocument} documents={documents} onStartWizard={() => setShowWizard(true)} />;
       case 'dashboard':
-        return wizardAnswers ? <DashboardView answers={wizardAnswers} results={assessmentResults} onStartAssessment={handleStartAssessment} onNavigateToPeerReview={handleNavigateToPeerReview} /> : <HomeView onSelectDocument={handleSelectDocument} documents={documents} onStartWizard={() => setShowWizard(true)} />;
+        return wizardAnswers ? <DashboardView {...dashboardProps} /> : <HomeView onSelectDocument={handleSelectDocument} documents={documents} onStartWizard={() => setShowWizard(true)} />;
       case 'assessment':
-        return activeAssessment ? <SelfAssessmentView assessmentTopic={activeAssessment} existingResult={assessmentResults[activeAssessment]} onBack={handleNavigateToDashboard} onComplete={handleAssessmentComplete} /> : <DashboardView answers={wizardAnswers!} results={assessmentResults} onStartAssessment={handleStartAssessment} onNavigateToPeerReview={handleNavigateToPeerReview} />;
+        return activeAssessment ? <SelfAssessmentView assessmentTopic={activeAssessment} existingResult={assessmentResults[activeAssessment]} onBack={handleNavigateToDashboard} onComplete={handleAssessmentComplete} /> : <DashboardView {...dashboardProps} />;
       case 'peerReview':
         return wizardAnswers ? <PeerReviewHubView onBack={handleNavigateToDashboard} answers={wizardAnswers} /> : <HomeView onSelectDocument={handleSelectDocument} documents={documents} onStartWizard={() => setShowWizard(true)} />;
+      case 'excellencePathway':
+        return <ExcellencePathwayView onBack={handleNavigateToDashboard} />;
+      case 'feedbackModule':
+        return <FeedbackModuleView onBack={handleNavigateToDashboard} />;
+      case 'competenceCenter':
+        return <CompetenceCenterView onBack={handleNavigateToDashboard} />;
       default:
-        return (
-          <HomeView 
-            onSelectDocument={handleSelectDocument} 
-            documents={documents}
-            onStartWizard={() => setShowWizard(true)}
-          />
-        );
+        return <HomeView onSelectDocument={handleSelectDocument} documents={documents} onStartWizard={() => setShowWizard(true)} />;
     }
   };
 

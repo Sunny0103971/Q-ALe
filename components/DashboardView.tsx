@@ -4,17 +4,21 @@ import Card from './Card';
 import ClipboardListIcon from './icons/ClipboardListIcon';
 import TrophyIcon from './icons/TrophyIcon';
 import RocketIcon from './icons/RocketIcon';
+import SparklesIcon from './icons/SparklesIcon';
+import ChatBubbleLeftRightIcon from './icons/ChatBubbleLeftRightIcon';
+import AcademicCapIcon from './icons/AcademicCapIcon';
 
 interface DashboardViewProps {
   answers: WizardAnswers;
   results: Record<string, AssessmentResult>;
   onStartAssessment: (priority: string) => void;
-  onNavigateToPeerReview: () => void;
+  onNavigate: (view: 'peerReview' | 'excellencePathway' | 'feedbackModule' | 'competenceCenter') => void;
 }
 
 const QACycleStage: React.FC<{ stage: number; title: string; currentStage: number; onClick: () => void; }> = ({ stage, title, currentStage, onClick }) => {
   const isCompleted = stage < currentStage;
   const isActive = stage === currentStage;
+  const isClickable = isActive && onClick !== null;
 
   const getStageClasses = () => {
     if (isCompleted) return 'bg-green-500';
@@ -43,7 +47,7 @@ const QACycleStage: React.FC<{ stage: number; title: string; currentStage: numbe
     </>
   );
 
-  if (isActive) {
+  if (isClickable) {
     return (
       <button onClick={onClick} className="flex items-center w-full text-left p-2 rounded-lg hover:bg-slate-100 transition-colors">
         {stageContent}
@@ -59,15 +63,17 @@ const QACycleStage: React.FC<{ stage: number; title: string; currentStage: numbe
 };
 
 
-const DashboardView: React.FC<DashboardViewProps> = ({ answers, results, onStartAssessment, onNavigateToPeerReview }) => {
+const DashboardView: React.FC<DashboardViewProps> = ({ answers, results, onStartAssessment, onNavigate }) => {
   const currentStage = 2; // Start at 'Peer Review' to showcase the new feature
   
   const handleStageClick = (stage: number) => {
     if (stage === 2) {
-      onNavigateToPeerReview();
+      onNavigate('peerReview');
     }
     // Future stages can be handled here
   };
+
+  const unlockedBadges = 1; // Mock data
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -76,20 +82,38 @@ const DashboardView: React.FC<DashboardViewProps> = ({ answers, results, onStart
         <p className="mt-2 text-lg text-slate-600">Your personalized Quality Assurance journey starts here.</p>
       </div>
       
-      <Card title="Your QA Improvement Cycle" icon={<RocketIcon />}>
-        <div className="flex flex-col space-y-1 p-2">
-            <QACycleStage stage={1} title="Prepare & Self-Assess" currentStage={currentStage} onClick={() => {}}/>
-            <div className="h-4 w-px bg-slate-300 ml-6"></div>
-            <QACycleStage stage={2} title="Peer Review" currentStage={currentStage} onClick={() => handleStageClick(2)} />
-            <div className="h-4 w-px bg-slate-300 ml-6"></div>
-            <QACycleStage stage={3} title="Report & Analyze" currentStage={currentStage} onClick={() => {}} />
-             <div className="h-4 w-px bg-slate-300 ml-6"></div>
-            <QACycleStage stage={4} title="Act & Improve" currentStage={currentStage} onClick={() => {}} />
-        </div>
-      </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <Card title="Your QA Improvement Cycle" icon={<RocketIcon />}>
+          <div className="flex flex-col space-y-1 p-2">
+              <QACycleStage stage={1} title="Prepare & Self-Assess" currentStage={currentStage} onClick={() => {}}/>
+              <div className="h-4 w-px bg-slate-300 ml-6"></div>
+              <QACycleStage stage={2} title="Peer Review" currentStage={currentStage} onClick={() => handleStageClick(2)} />
+              <div className="h-4 w-px bg-slate-300 ml-6"></div>
+              <QACycleStage stage={3} title="Report & Analyze" currentStage={currentStage} onClick={() => {}} />
+               <div className="h-4 w-px bg-slate-300 ml-6"></div>
+              <QACycleStage stage={4} title="Act & Improve" currentStage={currentStage} onClick={() => {}} />
+          </div>
+        </Card>
+
+        <Card title="Your Achievements" icon={<TrophyIcon />}>
+            <div className="text-center p-4 flex flex-col justify-between h-full">
+              <div>
+                <SparklesIcon className="mx-auto text-yellow-500 h-12 w-12" />
+                <p className="text-slate-600 mt-2">You've unlocked <span className="font-bold text-slate-800">{unlockedBadges}</span> badge so far. Keep up the great work!</p>
+                <p className="text-sm text-slate-500 mt-2">Complete assessments and peer reviews to earn more.</p>
+              </div>
+              <button
+                onClick={() => onNavigate('excellencePathway')}
+                className="mt-4 bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition-colors duration-300"
+              >
+                View Excellence Pathway
+              </button>
+            </div>
+        </Card>
+      </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <Card title="Your Priority Actions" icon={<ClipboardListIcon />}>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <Card title="Your Priority Actions" icon={<ClipboardListIcon />} className="md:col-span-2">
           <div className="space-y-4">
             {answers.priorities.map(priority => {
               const result = results[priority];
@@ -117,22 +141,23 @@ const DashboardView: React.FC<DashboardViewProps> = ({ answers, results, onStart
           </div>
         </Card>
         
-        <Card title="Your Achievements" icon={<TrophyIcon />}>
-            <div className="text-center p-4">
-                <p className="text-slate-600">You haven't earned any badges yet.</p>
-                <p className="text-sm text-slate-500 mt-2">Complete assessments and peer reviews to unlock badges like "Accessibility Champion" and "Excellence in Learner Support".</p>
-                <div className="mt-4 flex justify-center space-x-4 text-slate-300">
-                    <div className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center">
-                        <TrophyIcon className="w-8 h-8"/>
-                    </div>
-                     <div className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center">
-                        <TrophyIcon className="w-8 h-8"/>
-                    </div>
-                     <div className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center">
-                        <TrophyIcon className="w-8 h-8"/>
-                    </div>
+        <Card title="Development Tools" icon={<RocketIcon />}>
+          <div className="space-y-3">
+            <button onClick={() => onNavigate('feedbackModule')} className="w-full flex items-center p-3 bg-slate-50 rounded-lg hover:bg-slate-100 hover:shadow-sm transition-all">
+                <ChatBubbleLeftRightIcon className="w-7 h-7 text-blue-600 mr-3" />
+                <div>
+                  <h4 className="font-semibold text-slate-800 text-left">Feedback Module</h4>
+                  <p className="text-xs text-slate-500 text-left">Capture learner & trainer voices.</p>
                 </div>
-            </div>
+            </button>
+             <button onClick={() => onNavigate('competenceCenter')} className="w-full flex items-center p-3 bg-slate-50 rounded-lg hover:bg-slate-100 hover:shadow-sm transition-all">
+                <AcademicCapIcon className="w-7 h-7 text-blue-600 mr-3" />
+                 <div>
+                  <h4 className="font-semibold text-slate-800 text-left">Competence Center</h4>
+                  <p className="text-xs text-slate-500 text-left">Develop your training staff.</p>
+                </div>
+            </button>
+          </div>
         </Card>
       </div>
 

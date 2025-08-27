@@ -22,3 +22,31 @@ export interface AssessmentResult {
   scores: Record<string, AssessmentScore>;
   notes: Record<string, string>;
 }
+
+export interface Badge {
+  id: string;
+  title: string;
+  description: string;
+  unlocked: boolean;
+}
+
+export interface FeedbackResponse {
+  id: string;
+  respondentType: 'Learner' | 'Trainer';
+  response: string;
+  timestamp: string;
+}
+
+export interface Competence {
+  id: string;
+  name: string;
+  level: 'Foundational' | 'Proficient' | 'Expert';
+  achieved: boolean;
+}
+
+export interface Trainer {
+  id: string;
+  name: string;
+  role: string;
+  competences: Competence[];
+}
