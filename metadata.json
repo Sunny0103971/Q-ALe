@@ -1,0 +1,5 @@
+{
+  "name": "QA Model Synthesizer",
+  "description": "An interactive web application that synthesizes insights from key Quality Assurance (QA) documents in adult education to propose a modern, user-friendly, and engaging QA model.",
+  "requestFramePermissions": []
+}
