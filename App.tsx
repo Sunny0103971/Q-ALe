@@ -6,14 +6,18 @@ import DocumentView from './components/DocumentView';
 import OnboardingWizard from './components/OnboardingWizard';
 import DashboardView from './components/DashboardView';
 import SelfAssessmentView from './components/SelfAssessmentView';
-import type { DocumentAnalysis, WizardAnswers } from './types';
+import PeerReviewHubView from './components/PeerReviewHubView';
+import type { DocumentAnalysis, WizardAnswers, AssessmentResult } from './types';
+
+type View = 'home' | 'document' | 'dashboard' | 'assessment' | 'peerReview';
 
 const App: React.FC = () => {
+  const [currentView, setCurrentView] = useState<View>('home');
   const [selectedDocument, setSelectedDocument] = useState<DocumentAnalysis | null>(null);
   const [showWizard, setShowWizard] = useState(false);
-  const [wizardCompleted, setWizardCompleted] = useState(false);
   const [wizardAnswers, setWizardAnswers] = useState<WizardAnswers | null>(null);
   const [activeAssessment, setActiveAssessment] = useState<string | null>(null);
+  const [assessmentResults, setAssessmentResults] = useState<Record<string, AssessmentResult>>({});
 
   const documents: DocumentAnalysis[] = [
     {
@@ -78,7 +82,7 @@ const App: React.FC = () => {
       shortTitle: 'Finnish Bildung Model',
       description: 'A combination of a practical feedback form and the educational philosophy of "Bildung" (holistic personal growth).',
       takeaway: 'Prioritize Qualitative Feedback to Measure Learner Transformation (Bildung).',
-      rationale: 'This makes the QA model truly meaningful. Instead of just quantitative data, it focuses on the holistic development of the learner—their skills, self-awareness, and sense of agency. Using open-ended, reflective feedback (like "What did we do well?") makes the process human-centered and provides deep insights for improvement, aligning the model with the profound goals of adult education.',
+      rationale: 'This makes the QA model truly meaningful. Instead of just quantitative data, it focuses on the holistic development of the learner—their skills, self-awareness, and their sense of agency. Using open-ended, reflective feedback (like "What did we do well?") makes the process human-centered and provides deep insights for improvement, aligning the model with the profound goals of adult education.',
     },
     {
       id: 'stop-poland',
@@ -92,45 +96,67 @@ const App: React.FC = () => {
 
   const handleWizardComplete = (answers: WizardAnswers) => {
     setWizardAnswers(answers);
-    setWizardCompleted(true);
     setShowWizard(false);
-    setSelectedDocument(null);
-    setActiveAssessment(null);
+    setCurrentView('dashboard');
   };
 
   const handleHomeClick = () => {
+    setCurrentView('home');
     setSelectedDocument(null);
-    setWizardCompleted(false);
     setWizardAnswers(null);
     setActiveAssessment(null);
   };
   
-  const handleStartAssessment = (priority: string) => {
-    setSelectedDocument(null); // Deselect any document when starting an assessment
-    setActiveAssessment(priority);
+  const handleSelectDocument = (doc: DocumentAnalysis) => {
+    setSelectedDocument(doc);
+    setCurrentView('document');
   };
 
-  const handleBackToDashboard = () => {
+  const handleStartAssessment = (priority: string) => {
+    setActiveAssessment(priority);
+    setCurrentView('assessment');
+  };
+  
+  const handleNavigateToDashboard = () => {
     setActiveAssessment(null);
+    setCurrentView('dashboard');
+  };
+
+  const handleNavigateToPeerReview = () => {
+    setCurrentView('peerReview');
+  };
+  
+  const handleAssessmentComplete = (topic: string, result: AssessmentResult) => {
+    setAssessmentResults(prev => ({...prev, [topic]: result}));
   };
 
   const renderContent = () => {
-    if (activeAssessment) {
-      return <SelfAssessmentView assessmentTopic={activeAssessment} onBack={handleBackToDashboard} />;
+    switch(currentView) {
+      case 'home':
+        return (
+          <HomeView 
+            onSelectDocument={handleSelectDocument} 
+            documents={documents}
+            onStartWizard={() => setShowWizard(true)}
+          />
+        );
+      case 'document':
+        return selectedDocument ? <DocumentView document={selectedDocument} /> : <HomeView onSelectDocument={handleSelectDocument} documents={documents} onStartWizard={() => setShowWizard(true)} />;
+      case 'dashboard':
+        return wizardAnswers ? <DashboardView answers={wizardAnswers} results={assessmentResults} onStartAssessment={handleStartAssessment} onNavigateToPeerReview={handleNavigateToPeerReview} /> : <HomeView onSelectDocument={handleSelectDocument} documents={documents} onStartWizard={() => setShowWizard(true)} />;
+      case 'assessment':
+        return activeAssessment ? <SelfAssessmentView assessmentTopic={activeAssessment} existingResult={assessmentResults[activeAssessment]} onBack={handleNavigateToDashboard} onComplete={handleAssessmentComplete} /> : <DashboardView answers={wizardAnswers!} results={assessmentResults} onStartAssessment={handleStartAssessment} onNavigateToPeerReview={handleNavigateToPeerReview} />;
+      case 'peerReview':
+        return wizardAnswers ? <PeerReviewHubView onBack={handleNavigateToDashboard} answers={wizardAnswers} /> : <HomeView onSelectDocument={handleSelectDocument} documents={documents} onStartWizard={() => setShowWizard(true)} />;
+      default:
+        return (
+          <HomeView 
+            onSelectDocument={handleSelectDocument} 
+            documents={documents}
+            onStartWizard={() => setShowWizard(true)}
+          />
+        );
     }
-    if (wizardCompleted && wizardAnswers) {
-      return <DashboardView answers={wizardAnswers} onStartAssessment={handleStartAssessment} />;
-    }
-    if (selectedDocument) {
-      return <DocumentView document={selectedDocument} />;
-    }
-    return (
-      <HomeView 
-        onSelectDocument={setSelectedDocument} 
-        documents={documents}
-        onStartWizard={() => setShowWizard(true)}
-      />
-    );
   };
 
   return (
@@ -138,7 +164,7 @@ const App: React.FC = () => {
       {showWizard && <OnboardingWizard onComplete={handleWizardComplete} onClose={() => setShowWizard(false)} />}
       <Header onHomeClick={handleHomeClick} />
       <div className="flex-1 flex">
-        <Sidebar documents={documents} onSelect={setSelectedDocument} selectedDocumentId={selectedDocument?.id || null} />
+        <Sidebar documents={documents} onSelect={handleSelectDocument} selectedDocumentId={selectedDocument?.id || null} />
         <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto">
           {renderContent()}
         </main>
