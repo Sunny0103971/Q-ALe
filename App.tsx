@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -10,6 +11,8 @@ import PeerReviewHubView from './components/PeerReviewHubView';
 import ExcellencePathwayView from './components/ExcellencePathwayView';
 import FeedbackModuleView from './components/FeedbackModuleView';
 import CompetenceCenterView from './components/CompetenceCenterView';
+import Breadcrumbs from './components/Breadcrumbs';
+import type { Crumb } from './components/Breadcrumbs';
 import type { DocumentAnalysis, WizardAnswers, AssessmentResult } from './types';
 
 type View = 'home' | 'document' | 'dashboard' | 'assessment' | 'peerReview' | 'excellencePathway' | 'feedbackModule' | 'competenceCenter';
@@ -133,6 +136,37 @@ const App: React.FC = () => {
     setAssessmentResults(prev => ({...prev, [topic]: result}));
   };
 
+  const generateCrumbs = (): Crumb[] => {
+    const homeCrumb: Crumb = { label: 'Home', onClick: handleHomeClick };
+    const dashboardCrumb: Crumb = { label: 'Dashboard', onClick: handleNavigateToDashboard };
+
+    switch(currentView) {
+      case 'home':
+        return [homeCrumb];
+      case 'document':
+        return selectedDocument 
+          ? [homeCrumb, { label: 'Documents' }, { label: selectedDocument.shortTitle }]
+          : [homeCrumb];
+      case 'dashboard':
+        return [homeCrumb, { label: 'Dashboard' }];
+      case 'assessment':
+        // FIX: Use the 'activeAssessment' state variable instead of the undefined 'assessmentTopic'.
+        return activeAssessment 
+          ? [homeCrumb, dashboardCrumb, { label: `Self-Assessment: ${activeAssessment}` }]
+          : [homeCrumb, dashboardCrumb];
+      case 'peerReview':
+        return [homeCrumb, dashboardCrumb, { label: 'Peer Review Hub' }];
+      case 'excellencePathway':
+        return [homeCrumb, dashboardCrumb, { label: 'Excellence Pathway' }];
+      case 'feedbackModule':
+        return [homeCrumb, dashboardCrumb, { label: 'Feedback Module' }];
+      case 'competenceCenter':
+        return [homeCrumb, dashboardCrumb, { label: 'Competence Center' }];
+      default:
+        return [homeCrumb];
+    }
+  };
+
   const renderContent = () => {
     const dashboardProps = {
         answers: wizardAnswers!,
@@ -170,6 +204,7 @@ const App: React.FC = () => {
       <div className="flex-1 flex">
         <Sidebar documents={documents} onSelect={handleSelectDocument} selectedDocumentId={selectedDocument?.id || null} />
         <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto">
+          <Breadcrumbs crumbs={generateCrumbs()} />
           {renderContent()}
         </main>
       </div>
